@@ -18,26 +18,28 @@ empty! You can see a demonstration in the webpage below:
 http://astr.tohoku.ac.jp/~akhlaghi/Crop_from_Survey.html
 
 This is a big problem for those studies including objects that 
-are so close to the tile borders. Since some of the objects I 
-am working on had such a condition I wrote a simple C89 program 
+are too close to the tile borders. Since some of the objects I 
+am working on had such a condition I wrote a simple C program 
 (using `cfitsio` and `wcslib`) to crop galaxies out of the tiled 
-images. In the current version of the program you have to download 
-all the tiles in order for this program to work. later on, I will 
-add the ability to directly read the `FITS` files from the online 
-archive, but that will definitely be much slower than the 
-current version. If you are working a lot on a specific survey
-you will need to have the tiles any way.
+images while correcting for such cases by taking different parts
+of the final image from different tiles. In the current version 
+of the program you have to download all the tiles in order for 
+this program to work. later on, I will add the ability to 
+directly read the `FITS` files from the online archive, but that 
+will definitely be much slower than the current version. If you 
+are working a lot on a specific survey you will need to have the 
+tiles any way.
  
 ----------------------------------------
 Prerequisites 
 ----------------------------------------
-`tifaa` relies on the two packages defining the FITS standard, used
-to define astronomical images, and the World Coordiante System, 
-used to correlate pixel locations on an image to physical coordinates.
-The two packages I am using are the `cfitsio` and the `wcslib` packages. 
-I have explained the complete procedure of how to install these packages
-on this address. You should be able to install them successfully using 
-the instructions here:
+`tifaa` relies on two packages defining the FITS standard and WCS standard. 
+The former is used to define astronomical images, and the latter the 
+World Coordiante System, used to correlate pixel locations on an image 
+to physical coordinates. The two packages I am using are the `cfitsio` 
+and the `wcslib` packages. I have explained the complete procedure of how 
+to install these packages in the webpage below. You should be able to install 
+them successfully using the instructions there.
 http://astr.tohoku.ac.jp/~akhlaghi/cfitsiowcslibinstall.html
 
 ----------------------------------------
@@ -49,23 +51,24 @@ the former as a user and the latter as root. You don't have to type them!
 
     $ make
 
-In case you want to have system wide access to to `tifaa`, run: 
+In case you want to have system wide access to to `tifaa`, run the following
+command in that same folder. 
 
     $ su
     # mv tifaa /usr/local/bin
 
 To run `tifaa`, you simply have to run the following command. If you
 don't have a system wide installation, simply run the following 
-command with `./` before `tifaa` in the same directory you have
-run `make`.
+command with `./` before `tifaa` in the same directory you executed `make`.
 
     $ tifaa configure.txt
 
 Explanation about the configuration file can be seen below. An error
 message will be displayed if any more options are passed onto `tifaa`.
 
-After the installation several object files (ending with `.o`) will
-be created, to remove them you can simply run:
+After the compilation and linking (the `make` procedure) several 
+object files (ending with `.o`) will be created, to remove them 
+you can simply run:
 
     $ rm *.o
 
@@ -75,7 +78,7 @@ Input configuration file
 The configuration file may have any name, you just have to specify that
 name after the `tifaa` command. The configuration file contains the 12 
 inputs you have to provide to tifaa. The parameters of the configuration 
-file are fairly descriptive and example is shown below:
+file are fairly descriptive an example is shown below:
 
     CATALOG_ADDRESS = catalog.txt
     SURVEY_ADDRESS  = /directory/you/have/saved/the/survey/images/
@@ -189,6 +192,7 @@ Not necessarily in the written order.
  2. Add WCS information to the cropped images.
  3. Speed up the program with more efficient algorithms and parallel processing.
  4. Use GNU autotools to make the program for easier installation.
+ 5. Add option to use online images so downloading whole survey tiles won't be necessary.
 
 ----------------------------------------
 Comments and suggestions:
@@ -213,12 +217,12 @@ Tohoku University Astronomical Institute
 
 http://astr.tohoku.ac.jp/~akhlaghi/
 
-This program is free software: you can redistribute it and/or modify
+tifaa is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+tifaa is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
