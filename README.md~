@@ -182,8 +182,8 @@ file. A few lines of that file for my request looks like this:
 ----------------------------------------
 Future updates:
 ----------------------------------------
-In the future, I will implement several updates. 
-Not necessarily in the written order.
+In the future, I will implement several updates, not necessarily in the written
+order:
 
  1. Fix any shortcommings it might have that I have not noticed so far.
  2. Add WCS information to the cropped images.
