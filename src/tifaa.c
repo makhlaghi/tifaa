@@ -12,7 +12,8 @@
 #include "attaavv.h"
 #include "tifaa_code.h"
 
-int main (int argc, char *argv[])
+int 
+main (int argc, char *argv[])
 {
     /* Declare structures */
     struct ArrayInfo intable;
