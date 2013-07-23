@@ -15,7 +15,7 @@ section of the field for a specific study. But in some cases these
 cutout tools only cut out the region in one tile. So if an object
 lies close to the boundary of a tile, some of the cutout will be
 empty! You can see a demonstration in the webpage below:
-http://astr.tohoku.ac.jp/~akhlaghi/Crop_from_Survey.html
+http://astr.tohoku.ac.jp/~akhlaghi/Crop_from_Survey.html 
 
 This is a big problem for those studies including objects that 
 are so close to the tile borders. Since some of the objects I 
