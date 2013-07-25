@@ -43,11 +43,15 @@ http://astr.tohoku.ac.jp/~akhlaghi/cfitsiowcslibinstall.html
 ----------------------------------------
 Installation and running
 ----------------------------------------
-After installing `cfitsio` and `wcslib`, making `tifaa` is very easy, simply
-run the command below. I assume the `$` and `#` show your shell prompt, 
-the former as a user and the latter as root. You don't have to type them! 
+After installing `cfitsio` and `wcslib`, making `tifaa` is 
+very easy, simply run the command below. I assume the `$` and 
+`#` show your shell prompt, the former as a user and the latter 
+as root. You don't have to type them! 
 
     $ make
+
+To know more about the warnings, refer to the last paragraph of
+this section.
 
 In case you want to have system wide access to to `tifaa`, run: 
 
@@ -68,6 +72,16 @@ After the installation several object files (ending with `.o`) will
 be created, to remove them you can simply run:
 
     $ rm *.o
+
+The warnings that show up after running `make` and complain about 
+statically linked applications shouldn't bother you. If you don't 
+want them, remove the `-static` option on the second line of 
+`makefile` (starting with `gcc`). A static library will be self 
+contained and will not be dependent on your particular system 
+libraries. You can take the executables on similar machines that 
+don't have the `cfitsio` or `libwcs` packages installed. The negative
+side is that with statically shared libraries in the executable, 
+if you update `cfitsio` or `wcslib` you will have to run `make` again.
 
 ----------------------------------------
 Input configuration file
@@ -178,6 +192,17 @@ file. A few lines of that file for my request looks like this:
     20   1    0    
     21   1    0   
     ...(abrdiged)
+
+----------------------------------------
+Executable file(s):
+----------------------------------------
+Running the executables doesn't need any prerequisites since they have been
+statically compiled. Just make sure you run the executable belonging to your
+operating system. So far I only have 
+
+1. RedHat_Linux_86_64 (works on RedHat, Fedora, CentOS, Scientific Linux, etc)
+
+I will add more in the future.
 
 ----------------------------------------
 Future updates:
