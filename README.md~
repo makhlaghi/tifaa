@@ -52,11 +52,15 @@ as root. You don't have to type them!
 
     $ make
 
+<<<<<<< HEAD
 To know more about the warnings, refer to the last paragraph of
 this section.
 
+In case you want to have system wide access to to `tifaa`, run: 
+=======
 In case you want to have system wide access to to `tifaa`, run the following
 command in that same folder. 
+>>>>>>> cc766c69584ec7f0e5216223c280447fe454f626
 
     $ su
     # mv tifaa /usr/local/bin
