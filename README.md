@@ -82,9 +82,11 @@ want them, remove the `-static` option on the second line of
 `makefile` (starting with `gcc`). A static library will be self 
 contained and will not be dependent on your particular system 
 libraries. You can take the executables on similar machines that 
-don't have the `cfitsio` or `libwcs` packages installed. The negative
-side is that with statically shared libraries in the executable, 
-if you update `cfitsio` or `wcslib` you will have to run `make` again.
+don't have the `cfitsio` or `libwcs` packages installed. The speed
+is also very slightly faster in a statically shared program. The 
+negative side is that with statically shared libraries in the 
+executable, if you update `cfitsio` or `wcslib` you will have to 
+run `make` again to keep `tifaa` updated about the new versions.
 
 ----------------------------------------
 Input configuration file
