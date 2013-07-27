@@ -24,25 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TIFAA_H
 #define TIFAA_H
 
-/* Libraries to include: 
-System libraries: */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <glob.h>
-#include <sys/stat.h>
-#include <time.h>
-
-/* Installed libraries: */
-#include <fitsio.h>
-#include <wcslib/wcshdr.h>
-#include <wcslib/wcsfix.h>
-#include <wcslib/wcs.h>
-
-/* My libraries: */
-#include "attaavv.h"
-
 /* Macros: */
 #define NUM_IMAGEINFO_COLS  4
 #define WI_COLS             4
