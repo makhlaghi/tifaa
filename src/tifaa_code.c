@@ -458,7 +458,8 @@ fits_info(struct Config *conf, glob_t *fits_names,
                           NUM_IMAGEINFO_COLS*i, conf->res);
 }
 
-int cmpfunc (const void * a, const void * b)
+int 
+cmpfunc (const void * a, const void * b)
 {
    return ( *(int*)a - *(int*)b );
 }
