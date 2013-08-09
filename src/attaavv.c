@@ -375,12 +375,12 @@ int main (void)
     /* Close the file and return 0 (meaning success)  */
     fclose(fp);
 
-    /* Report the result: */
+    /* Report the result: 
     printf("\n\n----------------------\n");
     printf("Completed reading %s\n", filename);
     printf("   Shape of table: (%d, %d).\n", intable->s0, intable->s1);
     printf("   Number of replaced elements: %ld.\n", intable->nr);
-    printf("----------------------\n\n");
+    printf("----------------------\n\n");*/
 }
 
 void 
@@ -498,11 +498,11 @@ writeasciitable (const char *filename, struct ArrayInfo *intable,
         fprintf(fp, "\n");
     }
 
-    /* Report the result: */
+    /* Report the result: 
     printf("\n\n----------------------\n");
     printf("Completed writing %s\n", filename);
     printf("   Shape of table: (%d, %d).\n", intable->s0, intable->s1);
-    printf("----------------------\n\n");
+    printf("----------------------\n\n");*/
 
     /* Close the file and free all pointers: */
     free(fmt_all);

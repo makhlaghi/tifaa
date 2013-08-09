@@ -17,7 +17,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 
 **********************************************************************/
 /* Libraries to include: 
@@ -816,6 +816,9 @@ needs_one(struct ArrayInfo *intable, struct Config *conf,
             unique, &num_unique, EMPTY_VAL);
     img_counter=1;
 
+    for(pt=unique;pt<unique+intable->s0;pt++)
+    printf("%d\n", *pt);
+
     /* Set the width of the output */
     crop_side=(long)(conf->ps_size/conf->res);
     if (crop_side%2==0) crop_side-=1;
@@ -826,7 +829,7 @@ needs_one(struct ArrayInfo *intable, struct Config *conf,
     for(pt=unique;pt<unique+intable->s0;pt++)
     {
         /* In case it gets to the end, break out: */
-        if (*pt==EMPTY_VAL) break;
+        if (*pt==EMPTY_VAL) continue;
  
         /* Report the status: */
         printf("\nLooking in: (%d of %d) \n%s\n", img_counter, num_unique+1, 
@@ -941,8 +944,8 @@ needs_more_than_one(struct ArrayInfo *intable, struct Config *conf,
         zero_flag=0; remove_flag=0;
 
         /* In case only one image is needed, the job is already
-        done previously, so there is no need to do it again: */
-        if ((*which_images)[i*WI_COLS+1]==-1) continue; 
+        done previously, so there is no need to do it again: 
+        if ((*which_images)[i*WI_COLS+1]==-1) continue; */
 
         /* Set this object's ID, RA and Dec: */
         obj_id=(int)intable->d[i*intable->s1+conf->id_col];
@@ -1045,8 +1048,8 @@ stichcrop(struct ArrayInfo *intable, struct Config *conf,
         exit(EXIT_FAILURE);        
     }
 
-    /* For objects that only need one survey tile: */
-    needs_one(intable, conf, fits_names, which_images, final_report);
+    /* For objects that only need one survey tile: 
+    needs_one(intable, conf, fits_names, which_images, final_report);*/
 
     /* Objects that need more than one survey tile: */
     printf("\nObjects that need more than one image:\n");
@@ -1112,7 +1115,7 @@ print_report(struct ArrayInfo *intable,
     /* Print a summary on stdout */
     printf("\n\n\n----------------------------------------\n");
     printf("----------------------------------------\n");
-    printf("        %d objects cropped\n", intable->s0);
+    printf("        %d objects cropped\n", num_c+num_s);
     printf("        and placed in %s\n", conf->out_add);
     printf("----------------------------------------\n");
     printf("---------- Summary: \n");
