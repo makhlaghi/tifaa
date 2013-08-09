@@ -135,36 +135,29 @@ it to crop 283 objects from a survey.
 
     .abridged
     .
-    Looking in: (33 of 33) 
-    /directory/you/have/saved/the/survey/images/one_of_the_survey_fits_sci.fits
-       17:   cropped.
-       46:   cropped.
-       54:   cropped.
-       55:   cropped.
-       77:   cropped.
-       85:   cropped.
-       93:   cropped.
-       98:   cropped.
-      107:   cropped.
-      
-    Objects that need more than one image:
-       19:   stiched and cropped (2 images).
-       31:   stiched and cropped (2 images).
-       36:   stiched and cropped (2 images).
+    28:   cropped.
+    29:   cropped.
+    30:   cropped.
+    31:   stiched and cropped (2 images).
+    32:   cropped.
+    33:   cropped.
+    34:   cropped.
+    35:   cropped.
+    36:   stiched and cropped (2 images).
+    37:   cropped.
+    38:   cropped.
+    39:   cropped.
+    40:   cropped.
+    41:   cropped.
     .
     .abridged
-    .
-    ---------------------
-    Completed writing ./PS/imginfo.txt
-       Shape of table: (283, 3).
-    ----------------------
     .
     ----------------------------------------
     ----------------------------------------
             283 objects cropped
             and placed in ./PS/
     ----------------------------------------
-    ---------- Summary: 
+        ---------- Summary: 
     Cropped:                 274
     Stiched & cropped:       9
     Center zero  (no FITS):  0
@@ -172,10 +165,11 @@ it to crop 283 objects from a survey.
     ----------------------------------------
     ---------- Timing report:
     Num survey FITS images:  81
-    Preparing Survey info:   3 (seconds)
-    Cropping all:            31 (seconds)
+    Preparing Survey info:   0 (seconds)
+    Cropping all:            28 (seconds)
     ----------------------------------------
     ----------------------------------------
+
 
 A file placed in `OUTPUT_ADDRESS/IMG_INFO` is also created that contains
 a report of how many image were used for each object and if it has a `.fits`
