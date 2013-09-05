@@ -10,24 +10,29 @@ The sizes of wide field astronomical surveys that are archived
 online are usually too large (>2Gb) to download completely over the 
 HTTP protocol. For that purpose these surveys create tiles over
 the field and those tiles are available for download. Here is an
-example:
+example of the tiles of the HST/ACS tiles of the GOODS-North field:
+
+![Tiled image of GOODS-North](https://raw.github.com/makhlaghi/tifaa/master/ReadmeImages/CFS.jpg)
 
 
+Such servers usually have a cut out tool, but the cut out works on 
+each tile. So, for example, In [the above survey](http://archive.stsci.edu/prepds/goods/) 
+if you enter these coordinates: `189.1572459`,`62.268763` in their 
+[cutout tool](http://archive.stsci.edu/eidol_v2.php), with a width 
+of `45.03` (1501 pixels) you will get (for example in the `i` band): 
 
-These online
-archives also have cutout tools available to cutout a particular 
-section of the field for a specific study. But in some cases these
-cutout tools only cut out the region in one tile. So if an object
-lies close to the boundary of a tile, some of the cutout will be
-empty! You can see a demonstration in the webpage below:
-http://astr.tohoku.ac.jp/~akhlaghi/Crop_from_Survey.html
+![Example web cutout](https://raw.github.com/makhlaghi/tifaa/master/ReadmeImages/CFSweb.png)
 
 This is a big problem for those studies including objects that 
 are too close to the tile borders. Since some of the objects I 
 am working on had such a condition I wrote a simple C program 
 (using `cfitsio` and `wcslib`) to crop galaxies out of the tiled 
 images while correcting for such cases by taking different parts
-of the final image from different tiles. In the current version 
+of the final image from different tiles. 
+
+![Example tiffa output](https://raw.github.com/makhlaghi/tifaa/master/ReadmeImages/CFShere.png)
+
+In the current version 
 of the program you have to download all the tiles in order for 
 this program to work. later on, I will add the ability to 
 directly read the `FITS` files from the online archive, but that 
