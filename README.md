@@ -9,7 +9,12 @@ About tifaa
 The sizes of wide field astronomical surveys that are archived
 online are usually too large (>2Gb) to download completely over the 
 HTTP protocol. For that purpose these surveys create tiles over
-the field and those tiles are available for download. These online
+the field and those tiles are available for download. Here is an
+example:
+
+
+
+These online
 archives also have cutout tools available to cutout a particular 
 section of the field for a specific study. But in some cases these
 cutout tools only cut out the region in one tile. So if an object
