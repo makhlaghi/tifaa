@@ -58,7 +58,7 @@ printversioninfo()
   printf("\n\nTIFAA %s\n"
 	 "============\n"
 	 "Cut out and stich postage stamps from surveys.\n"
-	 "\nCopyright (C) 2014  Mohammad Akhlaghi\n"
+	 "\nCopyright (C) 2013-2014  Mohammad Akhlaghi\n"
 	 "This program comes with ABSOLUTELY NO WARRANTY.\n"
 	 "This is free software, and you are welcome to\n"
 	 "modify and redistribute it under the\n"
@@ -70,7 +70,7 @@ printversioninfo()
 
 
 void
-printhelp(struct tifaaparams *p, struct uiparams *up)
+printhelp(struct tifaaparams *p)
 {
   printversioninfo();
   printf("\nOptions are classified into three groups:\n"
@@ -78,7 +78,7 @@ printhelp(struct tifaaparams *p, struct uiparams *up)
 	 "  2. Not needing arguments (on/off switches). \n"
 	 "  3. Needing arguments.\n\n\n");
 
-  printf("########### Options that won't run TIFAA:\n"
+  printf("\n########### Options that won't run TIFAA:\n"
 	 " -h:\n\tPrint this help message.\n"
 	 "\tNote that if any option values are set prior to '-h'\n"
 	 "\tTheir values will be shown as default values.\n"
@@ -86,7 +86,7 @@ printhelp(struct tifaaparams *p, struct uiparams *up)
 	 " -v:\n\tOnly print version and copyright.\n\n");
 
 
-  printf("########### On/Off options (don't use arguments):\n"
+  printf("\n########### On/Off options (don't use arguments):\n"
 	 "########### By default these are off.\n");
 
   printf(" -e:\n\tVerbose mode, reporting every step.\n");
@@ -94,7 +94,7 @@ printhelp(struct tifaaparams *p, struct uiparams *up)
   printf(" -g:\n\tDelete existing postage stamp folder (if exists).\n\n");
 
 
-  printf("########### Options with arguments (mandatory):\n");
+  printf("\n########### Mandatory options with arguments:\n");
   
   printf("-c STRING:\n\tInput catalog name.\n\n"
 
@@ -109,14 +109,19 @@ printhelp(struct tifaaparams *p, struct uiparams *up)
 	 "-s STRING:\n\tWild card based survey image names.\n"
 	 "\tFor example if your survey images are in the directory\n"
 	 "\t`/SURVEY/` and all your survey images end in `sci.fits`\n"
-	 "\tthen the value for this option would be: `/SURVEY/*sci.fits`.\n\n"
+	 "\tthen the value for this option would be: `/SURVEY/*sci.fits`."
+	 "\n\n");
 
-	 "-t FLOAT:\n\tDEFAULT: %.2f\n"
-	 "\tThe number of threads you want TIFAA to use. The given value\n"
-	 "\twill be multiplied with your environment variable `NCORES`,\n"
-	 "\twhich is the number of threads your operating system has\n"
-	 "\tavailable. In case you want to only use one thread, set this"
-	 "\toption to 0.\n\n"
+
+  printf("\n########### Optional options with arguments:\n");
+
+  printf("-t INTEGER:\n\tDEFAULT: %lu\n"
+	 "\tThe number of threads you want TIFAA to use. Unfortunately,\n"
+	 "\tone step in wcslib is not thread-safe, therefore until a\n"
+	 "\ta future update where this issue is fixed in wcslib, TIFAA\n"
+	 "\twill operate faster on one thread! In case you want to see\n"
+	 "\thow many threads your OS has available type `$ echo $NCORES`\n"
+	 "\tin your terminal prompt.\n\n"
 
 	 "-o STRING:\n\tDEFAULT: `%s`\n"
 	 "\tFolder keeping the postage stamps.\n"
@@ -139,7 +144,7 @@ printhelp(struct tifaaparams *p, struct uiparams *up)
          "\tblank (zero). It might happen that a desired galaxy is in\n"
 	 "\tsuch regions. If so, you can specify a check size in the\n"
 	 "\tcentral pixels of each postage stamp to see if it is blank or\n"
-         "\tnot.\n\n", up->thrdmultip, p->out_name, p->out_ext, p->chk_size);
+         "\tnot.\n\n", p->numthrd, p->out_name, p->out_ext, p->chk_size);
 }
 
 
@@ -406,8 +411,8 @@ void
 setparams(int argc, char *argv[], struct tifaaparams *p)
 {
   int c, tmp;
+  char *tailptr;
   struct uiparams up;
-  char *tailptr, *envvalue;
 
   /* Set the default parameter values for a check in the end: */
   up.cat_name   = DEFAULTCATNAME;     p->ra_col    = DEFAULTRACOL;       
@@ -416,7 +421,7 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
   p->out_name   = "./PS/";            p->out_ext     = ".fits";          
   p->chk_size   = 3;                  p->info_name   = "psinfo.txt";     
   p->verb       = 0;                  up.delpsfolder = 0;                
-  up.thrdmultip = 0;
+  p->numthrd    = 1;
 
   while( (c=getopt(argc, argv, "hegva:c:d:f:k:o:p:r:s:t:")) 
 	 != -1 )
@@ -424,7 +429,7 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
       {
       /* Info options: */
       case 'h':                 /* Print help.  */
-	printhelp(p, &up);
+	printhelp(p);
 	exit(EXIT_SUCCESS);
 	break;
       case 'v':                 /* Print version.  */
@@ -463,7 +468,8 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
 	up.surv_name=optarg;
 	break;
       case 't':
-	up.thrdmultip=strtof(optarg, &tailptr);;
+	checkiflzero(optarg, &tmp, c);
+	p->numthrd=tmp;
 	break;
       case 'o':			/* Folder keeping cropped images. */
 	p->out_name=optarg;
@@ -484,18 +490,6 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
       default:
 	abort();
       }
-
-  /* Set the default number of threads based on the NCORES environment
-     variable. The number of meshes, if p->mesh.numthrd==0, then only
-     use one thread. */
-  if(up.thrdmultip!=0.0f)
-    {
-      envvalue=getenv("NCORES");
-      checkifelzero(envvalue, &tmp, ' '); /* Never smaller than zero! */
-      p->numthrd = (float) tmp * up.thrdmultip;
-    }
-  else
-    p->numthrd=1;
 
   checkifparamtersset(p, &up);
   checkfilesanddirectories(p, &up);

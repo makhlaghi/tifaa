@@ -80,18 +80,17 @@ prepindexsinthreads(size_t nindexs, size_t nthrds, size_t **outthrds,
 void 
 prepare_fitswcs(char *fits_name, fitsfile **fptr, int *f_status, 
 		int *w_status, int *nwcs, struct wcsprm **wcs,
-		pthread_mutex_t *wm)
+		pthread_mutex_t *wm, char **fullheader)
 {
   /* Declaratins: */
   int nkeys=0, relax, ctrl, nreject;
-  char *header;
 
   /********************************************
    ***********   CFITSIO functions:  **********
    ***********   To read the header  **********
    ********************************************/
   fits_open_file(fptr, fits_name, READONLY, f_status);
-  fits_hdr2str(*fptr, 1, NULL, 0, &header, &nkeys, f_status);
+  fits_hdr2str(*fptr, 1, NULL, 0, fullheader, &nkeys, f_status);
   if (*f_status!=0)
     {
       fits_report_error(stderr, *f_status);
@@ -106,7 +105,7 @@ prepare_fitswcs(char *fits_name, fitsfile **fptr, int *f_status,
   ctrl     = 0;          /* Don't report why a keyword wasn't used. */
   nreject  = 0;          /* Number of keywords rejected for syntax. */
   pthread_mutex_lock(wm);
-  *w_status = wcspih(header, nkeys, relax, ctrl, &nreject, nwcs, wcs);
+  *w_status = wcspih(*fullheader, nkeys, relax, ctrl, &nreject, nwcs, wcs);
   pthread_mutex_unlock(wm);
   if (*w_status!=0)
     {
@@ -114,7 +113,6 @@ prepare_fitswcs(char *fits_name, fitsfile **fptr, int *f_status,
 	      wcs_errmsg[*w_status]);
       exit(EXIT_FAILURE);
     }
-  free(header);
 
   /* Initialize the wcsprm struct */
   if ((*w_status = wcsset(*wcs))) 
@@ -138,10 +136,10 @@ void
 get_imginfo(char *fits_name, double *imginfo, unsigned long zero_pos, 
 	    const double res, pthread_mutex_t *wm)
 {
-  /* For prepare_fitswcs: */
-  int nwcs=0, f_status=0, w_status=0;
-  struct wcsprm *wcs;
   fitsfile *fptr;
+  char *fullheader;
+  struct wcsprm *wcs;
+  int nwcs=0, f_status=0, w_status=0;
 
   /* For converting coordinates, note that here we just want to
      convert one point, so ncoord=1, if you want more than one point,
@@ -154,8 +152,8 @@ get_imginfo(char *fits_name, double *imginfo, unsigned long zero_pos,
   double naxis1, naxis2;
 
   /* Prepare wcsprm structure: */
-  prepare_fitswcs(fits_name, &fptr, &f_status, 
-		  &w_status, &nwcs, &wcs, wm);
+  prepare_fitswcs(fits_name, &fptr, &f_status, &w_status, &nwcs, 
+		  &wcs, wm, &fullheader);
   fits_read_key(fptr, TDOUBLE, "NAXIS1", &naxis1, NULL, &f_status);
   fits_read_key(fptr, TDOUBLE, "NAXIS2", &naxis2, NULL, &f_status);
 
@@ -194,6 +192,8 @@ get_imginfo(char *fits_name, double *imginfo, unsigned long zero_pos,
   imginfo[zero_pos+1] = world[1];
   imginfo[zero_pos+2] = naxis1/7200*res; /* 7200=2*3600! */
   imginfo[zero_pos+3] = naxis2/7200*res;
+
+  free(fullheader);
 }
 
 

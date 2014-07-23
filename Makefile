@@ -6,11 +6,13 @@ vpath %.h $(src)
 vpath %.c $(src)
 
 CC      = gcc
-#CFLAGS  = -Wall -O3 -W -I$(src)
-CFLAGS  = -g -Wall -O0 -W -I$(src)  #For debugging and valgrind.
+CFLAGS  = -Wall -O3 -W -I$(src)
+#CFLAGS  = -g -Wall -O0 -W -I$(src)  #For debugging and valgrind.
 LDLIBS  = -lcfitsio -lwcs -pthread -lm
 
 tifaa: $(objects) 
 	$(CC) -o tifaa $(objects) $(LDLIBS) 
 	@rm *.o
 
+install:
+	cp ./tifaa /usr/local/bin/

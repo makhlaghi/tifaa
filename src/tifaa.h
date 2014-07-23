@@ -26,7 +26,7 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <glob.h>
 
-#define TIFFAVERSION        "v0.2"
+#define TIFFAVERSION        "v0.3"
 
 #define NONINDEX            (size_t)(-1)
 #define NUM_IMAGEINFO_COLS  4

@@ -18,6 +18,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with TIFFA. If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************/
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -56,7 +57,15 @@ convert_double_to_long_in_FITS(const double a, long *b)
    cropped image using the *pixel and *pixel_c arrays.
 
    NOTE: I am going with the cfitsio standard here: the desired region
-         boundries are included.*/
+         boundries are included.
+
+   The four long arrays are:
+
+   fpixel_i: First pixel in the input (large) image.
+   lpixel_i: Last pixel in the input (large) image.
+   fpixel_c: First pixel in the cropped image.
+   lpixel_c: Last pixel in the cropped image. 
+*/
 void 
 find_desired_pixel_range(double *pixcrd, const long naxis1,
         const long naxis2, const long crop_side, long *fpixel_i, 
@@ -217,6 +226,84 @@ report_prepare_end(int verb, size_t *log, size_t targetindex, int numimg,
 
 
 
+void
+addheaderinfo(fitsfile *write_fptr, int *wr_status, struct wcsprm *wcs,
+	      long *fpixel_i, long *fpixel_c, double *world, 
+	      double ps_size, double res)
+{
+  size_t i;
+  time_t rawtime;
+  int nkeyrec, h;
+  char comment[1000];
+  char startblank[]="                   / ";
+  char *wcsheader, *cp, *cpf, blankrec[80], titlerec[80];
+
+  time(&rawtime);
+
+  /* Set the last element of the blank array. */
+  cpf=blankrec+79;
+  *cpf='\0';
+  titlerec[79]='\0';
+  cp=blankrec; do *cp=' '; while(++cp<cpf);
+
+  /* Delete the comments that already exist: */
+  fits_delete_key(write_fptr, "COMMENT", wr_status);
+  fits_delete_key(write_fptr, "COMMENT", wr_status);
+
+  /* Add the WCS information: */
+  fits_write_record(write_fptr, blankrec, wr_status);
+  sprintf(titlerec, "%sWCS INFORMATION", startblank);
+  titlerec[strlen(titlerec)]=' ';
+  fits_write_record(write_fptr, titlerec, wr_status);
+  wcs->crpix[0] -= (fpixel_i[0]-1)+(fpixel_c[0]-1);
+  wcs->crpix[1] -= (fpixel_i[1]-1)+(fpixel_c[1]-1);
+  wcshdo(0, wcs, &nkeyrec, &wcsheader);
+  for(h=0;h<nkeyrec-1;++h)
+    {
+      cp=&wcsheader[h*80];
+      wcsheader[(h+1)*80-1]='\0';
+      fits_write_record(write_fptr, cp, wr_status);
+    }
+  free(wcsheader);
+
+  /*Print all the other information in the header:  */
+  fits_write_record(write_fptr, blankrec, wr_status);
+  sprintf(titlerec, "%sABOUT THIS THUMBNAIL", startblank);
+  for(i=strlen(titlerec);i<79;++i)
+    titlerec[i]=' ';
+  fits_write_record(write_fptr, titlerec, wr_status);  
+  sprintf(comment, "Created with TIFAA %s on %s.", 
+	  TIFFAVERSION, ctime(&rawtime));
+  fits_write_comment(write_fptr, comment, wr_status);
+  sprintf(comment, "RA  of thumbnail center: %13f", world[0]);
+  fits_write_comment(write_fptr, comment, wr_status);
+  sprintf(comment, "DEC of thumbnail center: %13f", world[1]);
+  fits_write_comment(write_fptr, comment, wr_status);
+  sprintf(comment, "Thumbnail is %.2f arcseconds across with %.3f "
+	  "arcsecond/pixel.", ps_size, res);
+  fits_write_comment(write_fptr, comment, wr_status);
+
+  /* Copyright information */
+  fits_write_record(write_fptr, blankrec, wr_status);
+  sprintf(titlerec, "%sABOUT TIFAA", startblank);
+  for(i=strlen(titlerec);i<79;++i)
+    titlerec[i]=' ';
+  fits_write_record(write_fptr, titlerec, wr_status);
+  sprintf(comment, "TIFAA is available under the GNU GPL v3+.");
+  fits_write_comment(write_fptr, comment, wr_status);
+  sprintf(comment, "https://github.com/makhlaghi/tifaa");
+  fits_write_comment(write_fptr, comment, wr_status);
+  sprintf(comment, "Copyright 2013-2014, Mohammad Akhlaghi.");
+  fits_write_comment(write_fptr, comment, wr_status);
+  sprintf(comment, "http://www.astr.tohoku.ac.jp/~akhlaghi/");
+  fits_write_comment(write_fptr, comment, wr_status);
+}
+
+
+
+
+
+
 void *
 stitchcroponthread(void *inparam)
 {
@@ -226,12 +313,12 @@ stitchcroponthread(void *inparam)
   pthread_mutex_t *wcsmtxp=p->wm;
   fitsfile *write_fptr, *read_fptr;
   float *cropped, *tmparray, nulval=-9999;
-  char *outname=p->tp->out_name, *outext=p->tp->out_ext;
   int stat[NWCSFIX], verb=p->tp->verb, group=0, anynul=0;
   char fitsname[1000], **imgnames=p->tp->survglob.gl_pathv;
   size_t racol=p->tp->ra_col, deccol=p->tp->dec_col, numimg;
   size_t *t, *i, *whichimg=p->tp->whichimg, *log=p->tp->log;
   int wr_status, fr_status, wc_status, nwcs, ncoord=1, nelem=2;
+  char *outname=p->tp->out_name, *outext=p->tp->out_ext, *fullheader;
   double world[2], *cat=p->tp->cat, phi, theta, imgcrd[2], pixcrd[2];
   long fpixel_c[2], lpixel_c[2], fpixel_i[2], lpixel_i[2], inc[2]={1,1};
   size_t zero_flag, remove_flag, cs1=p->tp->cs1, crop_side=p->crop_side;
@@ -266,8 +353,8 @@ stitchcroponthread(void *inparam)
 	{
 	  /* Prepare wcsprm structure and read the image size.*/
 	  fr_status=0; wc_status=0;
-	  prepare_fitswcs(imgnames[*i], &read_fptr, &fr_status, 
-			  &wc_status, &nwcs, &wcs, wcsmtxp);
+	  prepare_fitswcs(imgnames[*i], &read_fptr, &fr_status, &wc_status, 
+			  &nwcs, &wcs, wcsmtxp, &fullheader);
 	  fits_read_key(read_fptr, TLONG, "NAXIS1", &inaxes[0], 
 			NULL, &fr_status);
 	  fits_read_key(read_fptr, TLONG, "NAXIS2", &inaxes[1], 
@@ -298,8 +385,15 @@ stitchcroponthread(void *inparam)
 	  fits_write_subset_flt(write_fptr, group, naxis, onaxes, fpixel_c,
 				lpixel_c, tmparray, &wr_status);
 
+	  /* Add the WCS header information to the cropped image if
+	     this is the first stitch. */
+	  if(numimg==0)
+	    addheaderinfo(write_fptr, &wr_status, wcs, fpixel_i, fpixel_c,
+			  world, p->tp->ps_size, p->tp->res);
+
 	  /* Free the spaces: */
 	  free(tmparray);
+	  free(fullheader);
 	  fits_close_file(read_fptr, &fr_status);
 	  wc_status = wcsvfree(&nwcs, &wcs);
 	  ++numimg;
@@ -473,7 +567,11 @@ tifaa(struct tifaaparams *p)
   /* Stitch or crop the targets out of the images. */
   if(p->verb) gettimeofday(&t1, NULL);
   stitchandcrop(p);
-  if(p->verb) reporttiming(&t1, "All targets stitched or cropped.", 1);
+  if(p->verb) 
+    {
+      sprintf(report, "All %lu target(s) stitched or cropped.", p->cs0);
+      reporttiming(&t1, report, 1);
+    }
 
   tiffasavelog(p);
 }

@@ -44,10 +44,10 @@ void
 prepindexsinthreads(size_t nindexs, size_t nthrds, size_t **outthrds,
 		    size_t *outthrdcols);
 
-void
+void 
 prepare_fitswcs(char *fits_name, fitsfile **fptr, int *f_status, 
 		int *w_status, int *nwcs, struct wcsprm **wcs,
-		pthread_mutex_t *wm);
+		pthread_mutex_t *wm, char **fullheader);
 
 void
 getsurveyimageinfo(struct tifaaparams *tp);

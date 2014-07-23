@@ -3,188 +3,148 @@ tifaa
 
 tifaa - Thumbnail images from astronomical archives.
 
-----------------------------------------
-About tifaa
-----------------------------------------
-The sizes of wide field astronomical surveys that are archived
-online are usually too large (>2Gb) to download completely over the 
-HTTP protocol. For that purpose these surveys create tiles over
-the field and those tiles are available for download. Here is an
-example of the tiles of the HST/ACS tiles of the GOODS-North field:
+About tifaa:
+-----------
+
+The sizes of wide field astronomical surveys that are archived online
+are usually too large (>2Gb) to download completely over the HTTP
+protocol. For that purpose these surveys create tiles over the field
+and those tiles are available for download. Here is an example of the
+tiles of the HST/ACS tiles of the GOODS-North field:
 
 ![Tiled image of GOODS-North](https://raw.github.com/makhlaghi/tifaa/master/ReadmeImages/CFS.jpg)
 
 
-Such servers usually have a cut out tool, but the cut out works on 
-each tile. So, for example, In [the above survey](http://archive.stsci.edu/prepds/goods/) 
-if you enter these coordinates: `189.1572459`,`62.268763` in their 
-[cutout tool](http://archive.stsci.edu/eidol_v2.php), with a width 
-of `45.03` (1501 pixels) you will get (for example in the `i` band): 
+Such servers usually have a cut out tool, but the cut out works on
+each tile. So, for example, In [the above
+survey](http://archive.stsci.edu/prepds/goods/) if you enter these
+coordinates: `189.1572459`,`62.268763` in their [cutout
+tool](http://archive.stsci.edu/eidol_v2.php), with a width of `45.03`
+(1501 pixels) you will get (for example in the `i` band):
 
 ![Example web cutout](https://raw.github.com/makhlaghi/tifaa/master/ReadmeImages/CFSweb.png)
 
-This is a big problem for those studies including objects that 
-are too close to the tile borders. Since some of the objects I 
-am working on had such a condition I wrote a simple C program 
-(using `cfitsio` and `wcslib`) to crop galaxies out of the tiled 
-images while correcting for such cases by taking different parts
-of the final image from different tiles. 
+This is a big problem for those studies including objects that are too
+close to the tile borders. Since some of the objects I am working on
+had such a condition I wrote a simple C program (using `cfitsio` and
+`wcslib`) to crop galaxies out of the tiled images while correcting
+for such cases by taking different parts of the final image from
+different tiles.
 
 ![Example tiffa output](https://raw.github.com/makhlaghi/tifaa/master/ReadmeImages/CFShere.png)
 
-In the current version 
-of the program you have to download all the tiles in order for 
-this program to work. later on, I will add the ability to 
-directly read the `FITS` files from the online archive, but that 
-will definitely be much slower than the current version. If you 
-are working a lot on a specific survey you will need to have the 
-tiles any way.
+In the current version of the program you have to download all the
+tiles in order for this program to work. later on, I might add the
+ability to directly read the `FITS` files from the online archive, but
+that will definitely be much slower than the current version, because
+the tiles are usually very large and downloading them can take
+considerable time. If you are working a lot on a specific survey you
+will need to have the tiles any way.
  
 ----------------------------------------
 Prerequisites 
 ----------------------------------------
-`tifaa` relies on two packages defining the FITS standard and WCS standard. 
-The former is used to define astronomical images, and the latter the 
-World Coordiante System, used to correlate pixel locations on an image 
-to physical coordinates. The two packages I am using are the `cfitsio` 
-and the `wcslib` packages. I have explained the complete procedure of how 
-to install these packages in the webpage below. You should be able to install 
-them successfully using the instructions there.
+
+`tifaa` relies on two packages defining the FITS standard and WCS
+standard.  The former is used to define astronomical FITS images. The
+latter (World Coordiante System) is used to correlate pixel locations
+on an image to physical coordinates. The two packages I am using are
+the `cfitsio` and the `wcslib` packages, which are the de-facto
+standards in astronomy. I have explained the complete procedure of how
+to install these packages in the webpage below. You should be able to
+install them successfully using the instructions there.
 http://astr.tohoku.ac.jp/~akhlaghi/cfitsiowcslibinstall.html
 
-----------------------------------------
 Installation and running
-----------------------------------------
-After installing `cfitsio` and `wcslib`, making `tifaa` is 
-very easy, simply run the command below. I assume the `$` and 
-`#` show your shell prompt, the former as a user and the latter 
-as root. You don't have to type them! 
+------------------------
+
+After installing `cfitsio` and `wcslib`, making `tifaa` is very easy,
+simply run the command below in the downloaded directory. I assume the
+`$` and `#` show your shell prompt, the former as a user and the
+latter as root. You don't have to type them!
 
     $ make
 
-To know more about the warnings, refer to the last paragraph of
-this section.
-
-In case you want to have system wide access to to `tifaa`, run the following
-command in that same folder. 
+In case you want to have system wide access to to `tifaa`, run the
+following command in that same folder.
 
     $ su
-    # mv tifaa /usr/local/bin
+    # make install
 
-To run `tifaa`, you simply have to run the following command. If you
-don't have a system wide installation, simply run the following 
-command with `./` before `tifaa` in the same directory you executed `make`.
+to run `tifaa` you need to specify some command line options. The
+[POSIX argument syntax
+conventions](http://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html#Argument-Syntax)
+apply to the options. They are completely explained in the section
+belo
 
-    $ tifaa configure.txt
 
-Explanation about the configuration file can be seen below. An error
-message will be displayed if any more options are passed onto `tifaa`.
+Input options:
+--------------
 
-After the compilation and linking (the `make` procedure) several 
-object files (ending with `.o`) will be created, to remove them 
-you can simply run:
+If you type `tifaa -h`, a full list of options will be displayed. Here
+is a short explanation:
 
-    $ rm *.o
+Options that don't run `tifaa`:
+* `-h`: Print the help to explain all the options.
+* `-v`: View the version information of `tifaa` that you are running.
 
-The warnings that show up after running `make` and complain about 
-statically linked applications shouldn't bother you. If you don't 
-want them, remove the `-static` option on the second line of 
-`makefile` (starting with `gcc`). A static library will be self 
-contained and will not be dependent on your particular system 
-libraries. You can take the executables on similar machines that 
-don't have the `cfitsio` or `libwcs` packages installed. The speed
-is also very slightly faster in a statically shared program. The 
-negative side is that with statically shared libraries in the 
-executable, if you update `cfitsio` or `wcslib` you will have to 
-run `make` again to keep `tifaa` updated about the new versions.
+On/Off options (no value required):
+* `-e`: Verbose mode (print information as `tifaa` is running.
+* `-g`: Delete possibly existing output directory.
 
-----------------------------------------
-Input configuration file
-----------------------------------------
-The configuration file may have any name, you just have to specify that
-name after the `tifaa` command. The configuration file contains the 12 
-inputs you have to provide to tifaa. The parameters of the configuration 
-file are fairly descriptive an example is shown below:
+Mandatory options with arguments:
+* `-c`: Name of catalog you want thumbnails from.
+* `-r`: Column (starting from zero) of RA.
+* `-d`: Column (starting from zero) of Dec.
+* `-a`: Resolution of image (in arcseconds/pixel).
+* `-p`: Size of thumbnail image in arcseconds.
+* `-s`: String (with wildcards) showing the survey images.
 
-    CATALOG_ADDRESS = catalog.txt
-    SURVEY_ADDRESS  = /directory/you/have/saved/the/survey/images/
-    OUTPUT_ADDRESS  = ./PS/
-    OUTPUT_EXTEN    = .fits
-    IMG_PREFIX      = *sci.fits     #This varies from survey to survey
-    IMG_INFO        = imginfo.txt   
-    ID_COLUMN       = 0
-    RA_COLUMN       = 1
-    DEC_COLUMN      = 2
-    RESOLUTION      = 0.03          # In arcseconds
-    PS_SIZE         = 7             # In arcseconds
-    CHECK_SIZE      = 3             # Odd number
+Optional options with arguments:
+* `-t`: Number of CPU threads to use.
+* `-o`: Name of folder to keep the output thumbnails images.
+* `-f`: Ouput thumbnail name ending.
+* `-k`: Central pixels to check if thumbnail is not blank.
 
-`IMG_PREFIX` is the prefix of the desired FITS images in 
-`SURVEY_ADDRESS`. For example if you want to have thumbnails of the 
-weight images too, you have to change the value of this parameter to 
-`*wht.fits` (assuming your survey's weight images end with `wht.fits`).
-
-`IMG_INFO` is a text file that will be created in the end, containing 
-a simple log of the image cropping for each object. It is explained further
-below. The text file will be saved in `OUTPUT_ADDRESS`.
-
-`PS_SIZE` is the width of the square thumbnail (or postage stamp). 
-
-`CHECK_SIZE` is the size of the central region to check if there are non
-zero pixels covering the center or not. Since the tiles are all squares,
-on the sides of the survey you usually end up with empty space (zero valued
-pixels). This parameter is to prevent objects that are in those sections of
-a field being in the final cropped images. All such objects will be flagged
-in the final report.
-
-----------------------------------------
 Output:
-----------------------------------------
-A sample output as seen in my shell can be seen below after I requested
-it to crop 283 objects from a survey.
+-------
 
-    .abridged
-    .
-    28:   cropped.
-    29:   cropped.
-    30:   cropped.
-    31:   stiched and cropped (2 images).
-    32:   cropped.
-    33:   cropped.
-    34:   cropped.
-    35:   cropped.
-    36:   stiched and cropped (2 images).
-    37:   cropped.
-    38:   cropped.
-    39:   cropped.
-    40:   cropped.
-    41:   cropped.
-    .
-    .abridged
-    .
-    ----------------------------------------
-    ----------------------------------------
-            283 objects cropped
-            and placed in ./PS/
-    ----------------------------------------
-        ---------- Summary: 
-    Cropped:                 274
-    Stiched & cropped:       9
-    Center zero  (no FITS):  0
-    Out of field (no FITS):  0
-    ----------------------------------------
-    ---------- Timing report:
-    Num survey FITS images:  81
-    Preparing Survey info:   0 (seconds)
-    Cropping all:            28 (seconds)
-    ----------------------------------------
-    ----------------------------------------
+A sample output as seen in my shell when verbose mode was on, can be
+seen below after I requested it to crop 283 objects from a survey.
 
+    ----------------------------------------------------------------------
+    TIFAA v0.3 (1 threads) started on Wed Jul 23 21:23:22 2014
+      - WCS info of 81 image(s) has been read.   in 2.675826 seconds
+      - Target/image correspondance found.       in 0.000211 seconds
+        .
+        .abridged
+        .
+        28:   cropped.
+        29:   cropped.
+        30:   cropped.
+        31:   stiched and cropped (2 images).
+        32:   cropped.
+        33:   cropped.
+        34:   cropped.
+        35:   cropped.
+        36:   stiched and cropped (4 images).
+        37:   cropped.
+        38:   cropped.
+        39:   cropped.
+        40:   cropped.
+        41:   cropped.
+        .
+        .abridged
+        .
+      - All 145 target(s) stitched or cropped.   in 23.957981 seconds
+    TIFFA finished in:  27.330405 (seconds)
+    ----------------------------------------------------------------------
 
-A file placed in `OUTPUT_ADDRESS/IMG_INFO` is also created that contains
-a report of how many image were used for each object and if it has a `.fits`
-file associated with it or not with a flag explained in the header of that
-file. A few lines of that file for my request looks like this:
+A file placed in `OUTPUT_ADDRESS/tifaalog.txt` is also created that
+contains a report of how many images were used for each object and if
+it has a `.fits` file associated with it or not with a flag explained
+in the header of that file. A few lines of that file for my request
+looks like this:
 
     # Final report of cropping the objects:
     # Col 0: Object ID
@@ -202,16 +162,6 @@ file. A few lines of that file for my request looks like this:
     21   1    0   
     ...(abrdiged)
 
-----------------------------------------
-Executable file(s):
-----------------------------------------
-Running the executables doesn't need any prerequisites since they have been
-statically compiled. Just make sure you run the executable belonging to your
-operating system. So far I only have 
-
-1. RedHat_Linux_86_64 (works on RedHat, Fedora, CentOS, Scientific Linux, etc)
-
-I will add more in the future.
 
 ----------------------------------------
 Future updates:
@@ -220,10 +170,8 @@ In the future, I will implement several updates.
 Not necessarily in the written order.
 
  1. Fix any shortcommings it might have that I have not noticed so far.
- 2. Add WCS information to the cropped images.
- 3. Speed up the program with more efficient algorithms and parallel processing.
- 4. Use GNU autotools to make the program for easier installation.
- 5. Add option to use online images so downloading whole survey tiles won't be necessary.
+ 2. Use GNU autotools to make the program for easier installation.
+ 3. Add option to use online images so downloading whole survey tiles won't be necessary.
 
 ----------------------------------------
 Comments and suggestions:
@@ -242,7 +190,7 @@ http://astr.tohoku.ac.jp/~akhlaghi/
 ----------------------------------------
 Copyright:
 ----------------------------------------
-Copyright (C) 2013 Mohammad Akhlaghi
+Copyright (C) 2013-2014 Mohammad Akhlaghi
 
 Tohoku University Astronomical Institute
 
