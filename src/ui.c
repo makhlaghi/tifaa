@@ -19,6 +19,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************/
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -35,6 +36,21 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 /*************************************************************/
 /***************    Print version and help   *****************/
 /*************************************************************/
+/* s1_e0 tells it if it is printing the dashes at the start or the
+   end of the report. */
+void
+printdashes(int s1_e0)
+{
+  size_t i=0;
+  if(s1_e0) printf("\n\n");
+  while(i++<NUMDASHES) printf("-");
+  if(!s1_e0) printf("\n\n");
+  else printf("\n");
+}
+
+
+
+
 
 void
 printversioninfo()
@@ -54,7 +70,7 @@ printversioninfo()
 
 
 void
-printhelp(struct tifaaparams *p)
+printhelp(struct tifaaparams *p, struct uiparams *up)
 {
   printversioninfo();
   printf("\nOptions are classified into three groups:\n"
@@ -67,7 +83,7 @@ printhelp(struct tifaaparams *p)
 	 "\tNote that if any option values are set prior to '-h'\n"
 	 "\tTheir values will be shown as default values.\n"
 	 "\tTherefore, it is best to run this option alone.\n"
-	 " -v:\n\tOnly print version and copyright.\n");
+	 " -v:\n\tOnly print version and copyright.\n\n");
 
 
   printf("########### On/Off options (don't use arguments):\n"
@@ -75,38 +91,47 @@ printhelp(struct tifaaparams *p)
 
   printf(" -e:\n\tVerbose mode, reporting every step.\n");
 
-  printf(" -g:\n\tDelete existing postage stamp folder (if exists).\n");
+  printf(" -g:\n\tDelete existing postage stamp folder (if exists).\n\n");
 
 
   printf("########### Options with arguments (mandatory):\n");
   
   printf("-c STRING:\n\tInput catalog name.\n\n"
 
-	 "-i INTEGER:\n\tColumn of object IDs.\n\n"
+	 "-r INTEGER:\n\tColumn of object RA (counting starts from 0)\n\n"
 
-	 "-r INTEGER:\n\tColumn of object RA.\n\n"
-
-	 "-d INTEGER:\n\tColumn of object DEC.\n\n"
+	 "-d INTEGER:\n\tColumn of object DEC (counting starts from 0).\n\n"
 
 	 "-a FLOAT:\n\tResolution of image (arcseconds/pixel).\n\n"
 
 	 "-p FLOAT:\n\tSize of postage stamp (in arcseconds).\n\n"
 
-	 "-s STRING:\n\tFolder containing survey images.\n\n"
+	 "-s STRING:\n\tWild card based survey image names.\n"
+	 "\tFor example if your survey images are in the directory\n"
+	 "\t`/SURVEY/` and all your survey images end in `sci.fits`\n"
+	 "\tthen the value for this option would be: `/SURVEY/*sci.fits`.\n\n"
 
-	 "-b STRING:\n\tInput image ending in survey folder.\n"
-	 "\tUsually surveys provide both `science` images and `weight`\n"
-	 "\timages, with this option you can ask for a specific one,\n"
-	 "\tfor example `*sci.fits`.\n\n"
+	 "-t FLOAT:\n\tDEFAULT: %.2f\n"
+	 "\tThe number of threads you want TIFAA to use. The given value\n"
+	 "\twill be multiplied with your environment variable `NCORES`,\n"
+	 "\twhich is the number of threads your operating system has\n"
+	 "\tavailable. In case you want to only use one thread, set this"
+	 "\toption to 0.\n\n"
 
-	 "-o STRING:\n\tFolder keeping the postage stamps.\n"
-	 "\tNote: if the folder already exists, it will be deleted.\n\n"
+	 "-o STRING:\n\tDEFAULT: `%s`\n"
+	 "\tFolder keeping the postage stamps.\n"
+	 "\tNote that it has to end with a slash (`/`). It will be created\n"
+	 "\tif it doesn't exist. If it does exist, the `-g` option decides\n"
+	 "\tthe fate of the existing folder. Any image names that already\n"
+	 "\texist in this folder and have the same name as the those that\n"
+	 "\tTIFFA will produce will be deleted.\n\n"
 
-	 "-f STRING:\n\tPostage stamp extension. In cases where you want\n"
+	 "-f STRING:\n\tDEFAULT: `%s`\n"
+	 "\tPostage stamp extension. In cases where you want\n"
 	 "\tboth the weight image and actual image, you can use this option\n"
 	 "\tto specify the difference in the postage stamps.\n"
 	 "\tAs an examle if you are cropping weight images, the value for\n"
-	 "\tthis option could be: `_w.fits`.\n"
+	 "\tthis option could be: `_w.fits`.\n\n"
 
 	 "-k INTEGER:\n\tDEFAULT: %lu\n"
 	 "\tCheck size in the center of the postage stamp.\n"
@@ -114,7 +139,7 @@ printhelp(struct tifaaparams *p)
          "\tblank (zero). It might happen that a desired galaxy is in\n"
 	 "\tsuch regions. If so, you can specify a check size in the\n"
 	 "\tcentral pixels of each postage stamp to see if it is blank or\n"
-         "\tnot.\n", p->chk_size);
+         "\tnot.\n\n", up->thrdmultip, p->out_name, p->out_ext, p->chk_size);
 }
 
 
@@ -151,13 +176,6 @@ checkifparamtersset(struct tifaaparams *p, struct uiparams *up)
       printf("\t`-c` (catalog name).\n"); 
       ++numargmissing; 
     }
-  if(p->id_col == DEFAULTIDCOL)
-    { 
-      if(numargmissing==0)
-	{printversioninfo(); printf("Option(s) not set:\n");}
-      printf("\t`-i` (id column).\n"); 
-      ++numargmissing; 
-    }
   if(p->ra_col == DEFAULTRACOL)
     { 
       if(numargmissing==0)
@@ -186,32 +204,11 @@ checkifparamtersset(struct tifaaparams *p, struct uiparams *up)
       printf("\t`-p` (postage stamp size) not set.\n"); 
       ++numargmissing; 
     } 
-  if(p->surv_name == DEFAULTSURVNAME)
-    { 
-      if(numargmissing==0)
-	{printversioninfo(); printf("Option(s) not set:\n");}
-      printf("\t`-s` (folder of survey images).\n"); 
-      ++numargmissing; 
-    } 
-  if(p->img_pfx == DEFAULTIMGPFX)
-    { 
-      if(numargmissing==0)
-	{printversioninfo(); printf("Option(s) not set:\n");}
-      printf("\t`-b` (survey image name ending).\n"); 
-      ++numargmissing; 
-    } 
-  if(p->out_name == DEFAULTOUTNAME)
-    {
-      if(numargmissing==0)
-	{printversioninfo(); printf("Option(s) not set:\n");}
-      printf("\t`-p` (output folder name).\n"); 
-      ++numargmissing; 
-    } 
-  if(p->out_ext == DEFAULTOUTEXT)
+  if(up->surv_name == DEFAULTSURVNAME)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option not set:\n");}
-      printf("\t`-p` (output folder name).\n"); 
+      printf("\t`-s` (wild card of survey images).\n"); 
       ++numargmissing; 
     } 
   if(numargmissing)
@@ -243,16 +240,6 @@ checkfilesanddirectories(struct tifaaparams *p, struct uiparams *up)
   else
     fclose(fp);
 
-  /* Check to see if the survey directory exists. */
-  if( (dp=opendir(p->surv_name) )==NULL)
-    {
-      printf("Error: the survey image directory (%s) cannot be opened.\n\n",
-	     p->surv_name);
-      exit(0);
-    }
-  else
-    closedir(dp);
-
   /* Check the postage stamp directory. If it is asked to delete it,
      then do so, if not, just make sure it is there and everything is
      fine. If it is not there, make it. */
@@ -280,8 +267,9 @@ checkfilesanddirectories(struct tifaaparams *p, struct uiparams *up)
 
 
 void
-readinputcatalog(struct tifaaparams *p, struct uiparams *up)
+readinputcatalogandimgnames(struct tifaaparams *p, struct uiparams *up)
 {
+  int globout;
   struct ArrayInfo ai;
   
   readasciitable(up->cat_name, &ai);
@@ -303,7 +291,58 @@ readinputcatalog(struct tifaaparams *p, struct uiparams *up)
       }
   }
   */
-  exit(0);
+
+  /* Successful result will be zero, so if it is not successful, it
+     will output a non-zero value. */
+  globout=glob(up->surv_name, GLOB_NOSORT, NULL, &p->survglob);
+  if(globout)
+    {
+      printf("\n\nError in expanding the given wildcard:\n%s\n", 
+	     up->surv_name);
+      if (globout==GLOB_ABORTED)
+	printf("----The directory could not be opened.");
+      else if(globout==GLOB_NOMATCH)
+	printf("----There were no matches\n\n");
+      else if (globout==GLOB_NOSPACE)
+	printf("----Not enough space to allocate the names.\n\n");
+      exit(EXIT_FAILURE);
+    } 
+
+  /* Incase you want to see the results:
+  {
+    size_t i;
+    printf("gl_pathc: %lu\n", (size_t)p->survglob.gl_pathc);
+    for(i=0;i<(size_t)p->survglob.gl_pathc;i++)
+      printf("%lu: %s\n", i, p->survglob.gl_pathv[i]);
+  }
+  */
+}
+
+
+
+
+
+void
+allocateinternalarrays(struct tifaaparams *p)
+{
+  size_t numimg, *sp, *fp;
+
+  /* Allocate the array to keep all the image information. */
+  numimg=p->survglob.gl_pathc;
+  p->imginfo=malloc(numimg*NUM_IMAGEINFO_COLS*sizeof *p->imginfo);
+  assert(p->imginfo!=NULL);
+
+  /* Allocate and initialize the array to keep the image indexs that
+     are needed for every target in the catalog (so it has to have the
+     same number of rows as the catalog, but with WI_COLS columns. */
+  p->whichimg=malloc(p->cs0*WI_COLS*sizeof *p->whichimg);
+  assert(p->whichimg!=NULL);
+  fp=(sp=p->whichimg)+p->cs0*WI_COLS;
+  do *sp=NONINDEX; while(++sp<fp);
+
+  /* Allocate space for the log table (showing the final status of
+     each target's postage stamp. */
+  assert( ( p->log=calloc(p->cs0*LOG_COLS, sizeof *p->log) )!=NULL );
 }
 
 
@@ -367,25 +406,25 @@ void
 setparams(int argc, char *argv[], struct tifaaparams *p)
 {
   int c, tmp;
-  char *tailptr;
   struct uiparams up;
+  char *tailptr, *envvalue;
 
   /* Set the default parameter values for a check in the end: */
-  up.cat_name  = DEFAULTCATNAME;     p->id_col      = DEFAULTIDCOL;
-  p->ra_col    = DEFAULTRACOL;       p->dec_col     = DEFAULTDECCOL;
-  p->res       = DEFAULTRES;         p->ps_size     = DEFAULTPSSIZE;
-  p->surv_name = DEFAULTSURVNAME;    p->img_pfx     = DEFAULTIMGPFX;
-  p->out_name  = DEFAULTOUTNAME;     p->out_ext     = DEFAULTOUTEXT;
-  p->chk_size  = 3;                  p->info_name   = "psinfo.txt";
-  p->verb      = 0;                  up.delpsfolder = 0;
+  up.cat_name   = DEFAULTCATNAME;     p->ra_col    = DEFAULTRACOL;       
+  p->dec_col    = DEFAULTDECCOL;      p->res       = DEFAULTRES;         
+  p->ps_size    = DEFAULTPSSIZE;      up.surv_name = DEFAULTSURVNAME;    
+  p->out_name   = "./PS/";            p->out_ext     = ".fits";          
+  p->chk_size   = 3;                  p->info_name   = "psinfo.txt";     
+  p->verb       = 0;                  up.delpsfolder = 0;                
+  up.thrdmultip = 0;
 
-  while( (c=getopt(argc, argv, "hegva:b:c:d:f:i:k:o:p:r:s:")) 
+  while( (c=getopt(argc, argv, "hegva:c:d:f:k:o:p:r:s:t:")) 
 	 != -1 )
     switch(c)
       {
       /* Info options: */
       case 'h':                 /* Print help.  */
-	printhelp(p);
+	printhelp(p, &up);
 	exit(EXIT_SUCCESS);
 	break;
       case 'v':                 /* Print version.  */
@@ -406,17 +445,13 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
       case 'c':	                /* Input catalog name */
 	up.cat_name=optarg;
 	break;
-      case 'i':	                /* Column number of ID (from 1).*/
+      case 'r':	                /* Column number of RA (from 0).*/
 	checkiflzero(optarg, &tmp, c);	
-	p->id_col=tmp-1;
+	p->ra_col=tmp;
 	break;
-      case 'r':	                /* Column number of RA (from 1).*/
+      case 'd':	                /* Column number of DEC (from 0).*/
 	checkiflzero(optarg, &tmp, c);	
-	p->ra_col=tmp-1;
-	break;
-      case 'd':	                /* Column number of DEC (from 1).*/
-	checkiflzero(optarg, &tmp, c);	
-	p->dec_col=tmp-1;
+	p->dec_col=tmp;
 	break;
       case 'a':			/* Resolution of image. */
 	p->res=strtof(optarg, &tailptr);
@@ -425,10 +460,10 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
 	p->ps_size=strtof(optarg, &tailptr);
 	break;
       case 's':			/* Folder containing survey images. */
-	p->surv_name=optarg;
+	up.surv_name=optarg;
 	break;
-      case 'b':			/* Image prefix in survey folder. */
-	p->img_pfx=optarg;
+      case 't':
+	up.thrdmultip=strtof(optarg, &tailptr);;
 	break;
       case 'o':			/* Folder keeping cropped images. */
 	p->out_name=optarg;
@@ -450,7 +485,36 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
 	abort();
       }
 
+  /* Set the default number of threads based on the NCORES environment
+     variable. The number of meshes, if p->mesh.numthrd==0, then only
+     use one thread. */
+  if(up.thrdmultip!=0.0f)
+    {
+      envvalue=getenv("NCORES");
+      checkifelzero(envvalue, &tmp, ' '); /* Never smaller than zero! */
+      p->numthrd = (float) tmp * up.thrdmultip;
+    }
+  else
+    p->numthrd=1;
+
   checkifparamtersset(p, &up);
   checkfilesanddirectories(p, &up);
-  readinputcatalog(p, &up);
+  readinputcatalogandimgnames(p, &up);
+  allocateinternalarrays(p);
+}
+
+
+
+
+
+
+/* Free all the allocated arrays in tifaaparams. */
+void
+freeparams(struct tifaaparams *p)
+{
+  free(p->cat);
+  free(p->log);
+  free(p->imginfo);
+  free(p->whichimg);
+  globfree(&p->survglob);
 }

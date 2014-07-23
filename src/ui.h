@@ -22,8 +22,9 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TIFAAUI_H
 #define TIFAAUI_H
 
+#define NUMDASHES       70
+
 #define DEFAULTCATNAME  NULL
-#define DEFAULTIDCOL    (size_t)(-1)
 #define DEFAULTRACOL    (size_t)(-1)
 #define DEFAULTDECCOL   (size_t)(-1)
 #define DEFAULTRES      -1.0f
@@ -35,12 +36,21 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 
 struct uiparams
 {
-  char  *cat_name;  /* Address of catalog    */
-  int delpsfolder;  /* ==0: don't. ==1: do.  */
+  char   *cat_name;  /* Address of catalog                             */
+  int  delpsfolder;  /* ==0: don't. ==1: do.                           */
+  char  *surv_name;  /* Folder containing archive images.              */
+  float thrdmultip;  /* Multiple of NCORES to use threads.             */
 };
 
 
 void
+printdashes(int s1_e0);
+
+void
 setparams(int argc, char *argv[], struct tifaaparams *p);
+
+void
+freeparams(struct tifaaparams *p);
+
 
 #endif

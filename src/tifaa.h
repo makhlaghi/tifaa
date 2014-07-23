@@ -24,37 +24,59 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TIFAA_H
 #define TIFAA_H
 
+#include <glob.h>
+
 #define TIFFAVERSION        "v0.2"
 
-/* Macros: */
+#define NONINDEX            (size_t)(-1)
 #define NUM_IMAGEINFO_COLS  4
-#define WI_COLS             4
-#define FINAL_REPORT_COLS   3
-#define LINE_BUFFER         1000
-#define PI                  3.14159265359
-#define MAX_FILE_NAME_SIZE  256
-#define EMPTY_VAL           -1
+#define WI_COLS             8
+#define LOG_COLS            3
+
+
+
+
 
 struct tifaaparams
 {
-  int        verb;  /* ==1: report steps. ==0 don't.                  */
+  /* Paramters given by user: */
+  size_t    numthrd;  /* Number of threads to use.                      */
+  int          verb;  /* ==1: report steps. ==0 don't.                  */
+  double       *cat;  /* Data of catalog.                               */
+  size_t        cs0;  /* Number of rows in the catalog.                 */
+  size_t        cs1;  /* Number of columns in the catalog.              */
+  size_t     ra_col;  /* Catalog RA column                              */
+  size_t    dec_col;  /* Catalog Dec column                             */
+  double        res;  /* Resolution in arcseconds                       */
+  double    ps_size;  /* Postage stamp size (in arcseconds).            */
+  glob_t   survglob;  /* glob structure of input images.                */
+  char    *out_name;  /* Folder keeping the cropped images              */
+  char     *out_ext;  /* Ending of output file name                     */
+  long     chk_size;  /* width of a box to check for zeros              */
+  char   *info_name;  /* File keeping the results log.                  */
 
-  double     *cat;  /* Data of catalog.                               */
-  size_t      cs0;  /* Number of rows in the catalog.                 */
-  size_t      cs1;  /* Number of columns in the catalog.              */
-  size_t   id_col;  /* Catalog ID column                              */
-  size_t   ra_col;  /* Catalog RA column                              */
-  size_t  dec_col;  /* Catalog Dec column                             */
+  /* Internal parameters:  */
+  double   *imginfo;  /* Necessary information for each image.          */
+  size_t  *whichimg;  /* Array saying which images for which target.    */
+  size_t       *log;  /* Log for all the objects.                       */
+};
 
-  double      res;  /* Resolution in arcseconds                       */
-  double  ps_size;  /* Postage stamp size (in arcseconds).            */
-  char *surv_name;  /* Folder containing archive images.              */
-  char   *img_pfx;  /* Prefix showing the image files in the archive,
-		       in other words: (replace the *) "##*".         */
-  char  *out_name;  /* Folder keeping the cropped images              */
-  char   *out_ext;  /* Ending of output file name                     */
-  size_t chk_size;  /* width of a box to check for zeros              */
-  char *info_name;  /* File keeping the results log.                  */
+
+
+
+
+struct stitchcropthread
+{
+  size_t              id; /* ID of thread.                            */
+  size_t    *targetthrds; /* Which target for which thread.           */
+  size_t        thrdcols; /* Number of columns in targetthrd.         */
+  size_t       crop_side; /* Side of the cropped region in pixels.    */
+  struct tifaaparams *tp; /* All available parameters.                */
+
+  size_t           *done; /* Counter of number of compelted threads.  */
+  pthread_mutex_t     *m; /* Thread mutex.                            */
+  pthread_mutex_t    *wm; /* WCS mutex.                               */
+  pthread_cond_t      *c; /* Conditional variable.                    */
 };
 
 /* Function declarations: */

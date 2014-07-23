@@ -314,7 +314,7 @@ readasciitable (const char *filename, struct ArrayInfo *intable)
 
   /* Initialize all the sizes in the structure 
      to zero for later steps */
-  intable->c=malloc(buff_comments*sizeof(char));
+  intable->c=calloc(buff_comments, sizeof(char));
   intable->s0=0;
   intable->s1=0;
   intable->nr=0;
