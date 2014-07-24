@@ -40,6 +40,14 @@ that will definitely be much slower than the current version, because
 the tiles are usually very large and downloading them can take
 considerable time. If you are working a lot on a specific survey you
 will need to have the tiles any way.
+
+`tifaa` will write a corrected WCS header information to the cropped
+images so the pixels in a cropped and stitched images have exactly the
+same celestial coordinates as they would in the larger survey images. 
+
+As an option (`-w)`, `tifaa` can also multiply the weight images and
+the science images in a survey so that the resulting image (especially
+in HST surveys) will be in units of counts and not counts/second.
  
 ----------------------------------------
 Prerequisites 
@@ -81,8 +89,8 @@ belo
 Input options:
 --------------
 
-If you type `tifaa -h`, a full list of options will be displayed. Here
-is a short explanation:
+If you type `tifaa -h`, a full list of options will be displayed and
+explained. Here is a short summary.
 
 Options that don't run `tifaa`:
 * `-h`: Print the help to explain all the options.
@@ -101,6 +109,7 @@ Mandatory options with arguments:
 * `-s`: String (with wildcards) showing the survey images.
 
 Optional options with arguments:
+* `-w`: Wildcard representation of weight images. 
 * `-t`: Number of CPU threads to use.
 * `-o`: Name of folder to keep the output thumbnails images.
 * `-f`: Ouput thumbnail name ending.

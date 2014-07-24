@@ -22,24 +22,18 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TIFAAUI_H
 #define TIFAAUI_H
 
-#define NUMDASHES       70
+#define NUMDASHES        70
 
-#define DEFAULTCATNAME  NULL
-#define DEFAULTRACOL    (size_t)(-1)
-#define DEFAULTDECCOL   (size_t)(-1)
-#define DEFAULTRES      -1.0f
-#define DEFAULTPSSIZE   -1.0f
-#define DEFAULTSURVNAME NULL
-#define DEFAULTIMGPFX   NULL
-#define DEFAULTOUTNAME  NULL
-#define DEFAULTOUTEXT   NULL
+#define DEFAULTPOINTER   NULL
+#define DEFAULTINDEX     (size_t)(-1)
+#define DEFAULTPOSFLOAT  -1.0f
 
 struct uiparams
 {
   char   *cat_name;  /* Address of catalog                             */
   int  delpsfolder;  /* ==0: don't. ==1: do.                           */
-  char  *surv_name;  /* Folder containing archive images.              */
-  float thrdmultip;  /* Multiple of NCORES to use threads.             */
+  char  *surv_name;  /* Wild card of survey images.                    */
+  char *wsurv_name;  /* Wild card of survey weight images.             */
 };
 
 

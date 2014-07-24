@@ -87,16 +87,14 @@ printhelp(struct tifaaparams *p)
 
 
   printf("\n########### On/Off options (don't use arguments):\n"
-	 "########### By default these are off.\n");
+	 "########### By default these are off.\n"
+	 " -e:\n\tVerbose mode, reporting every step.\n\n"
 
-  printf(" -e:\n\tVerbose mode, reporting every step.\n");
-
-  printf(" -g:\n\tDelete existing postage stamp folder (if exists).\n\n");
+	 " -g:\n\tDelete existing postage stamp folder (if exists).\n\n");
 
 
-  printf("\n########### Mandatory options with arguments:\n");
-  
-  printf("-c STRING:\n\tInput catalog name.\n\n"
+  printf("\n########### Mandatory options with arguments:\n"
+	 "-c STRING:\n\tInput catalog name.\n\n"
 
 	 "-r INTEGER:\n\tColumn of object RA (counting starts from 0)\n\n"
 
@@ -113,9 +111,13 @@ printhelp(struct tifaaparams *p)
 	 "\n\n");
 
 
-  printf("\n########### Optional options with arguments:\n");
+  printf("\n########### Optional options with arguments:\n"
+	 "-w STRING:\n\tWild card based survey weight image names.\n"
+	 "\tSimilar to `-s` but for weight images. If this option is called\n"
+	 "\tthen TIFAA will multiply the cropped regions from the\n"
+	 "\timages in this wildcard to those provided in `-s`.\n\n"
 
-  printf("-t INTEGER:\n\tDEFAULT: %lu\n"
+	 "-t INTEGER:\n\tDEFAULT: %lu\n"
 	 "\tThe number of threads you want TIFAA to use. Unfortunately,\n"
 	 "\tone step in wcslib is not thread-safe, therefore until a\n"
 	 "\ta future update where this issue is fixed in wcslib, TIFAA\n"
@@ -174,42 +176,42 @@ checkifparamtersset(struct tifaaparams *p, struct uiparams *up)
 {
   int numargmissing=0;
 
-  if(up->cat_name == DEFAULTCATNAME)
+  if(up->cat_name == DEFAULTPOINTER)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option(s) not set:\n");}
       printf("\t`-c` (catalog name).\n"); 
       ++numargmissing; 
     }
-  if(p->ra_col == DEFAULTRACOL)
+  if(p->ra_col == DEFAULTINDEX)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option(s) not set:\n");}
       printf("\t`-r` (RA column).\n"); 
       ++numargmissing; 
     }
-  if(p->dec_col == DEFAULTDECCOL)
+  if(p->dec_col == DEFAULTINDEX)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option(s) not set:\n");}
       printf("\t`-d` (DEC column).\n"); 
       ++numargmissing; 
     }
-  if(p->res == DEFAULTRES)
+  if(p->res == DEFAULTPOSFLOAT)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option(s) not set:\n");}
       printf("\t`-a` (image resolution).\n"); 
       ++numargmissing; 
     } 
-  if(p->ps_size == DEFAULTPSSIZE)
+  if(p->ps_size == DEFAULTPOSFLOAT)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option(s) not set:\n");}
       printf("\t`-p` (postage stamp size) not set.\n"); 
       ++numargmissing; 
     } 
-  if(up->surv_name == DEFAULTSURVNAME)
+  if(up->surv_name == DEFAULTPOINTER)
     { 
       if(numargmissing==0)
 	{printversioninfo(); printf("Option not set:\n");}
@@ -218,7 +220,8 @@ checkifparamtersset(struct tifaaparams *p, struct uiparams *up)
     } 
   if(numargmissing)
     {
-      printf("\nError: %d required option%s(above) not provided.\n\n", 
+      printf("\nError: %d required option%s(above) not provided.\n"
+	     "TIFAA aborted.\n\n", 
 	     numargmissing, numargmissing > 1 ? "s " : " " );
       exit(EXIT_FAILURE);
     }
@@ -299,7 +302,7 @@ readinputcatalogandimgnames(struct tifaaparams *p, struct uiparams *up)
 
   /* Successful result will be zero, so if it is not successful, it
      will output a non-zero value. */
-  globout=glob(up->surv_name, GLOB_NOSORT, NULL, &p->survglob);
+  globout=glob(up->surv_name, 0, NULL, &p->survglob);
   if(globout)
     {
       printf("\n\nError in expanding the given wildcard:\n%s\n", 
@@ -321,6 +324,45 @@ readinputcatalogandimgnames(struct tifaaparams *p, struct uiparams *up)
       printf("%lu: %s\n", i, p->survglob.gl_pathv[i]);
   }
   */
+ 
+
+  /* If it is desired to multiply the weight images, get the glob
+     information here. */
+  if(p->weightmultip)
+    {
+      globout=glob(up->wsurv_name, 0, NULL, &p->wsurvglob);
+      if(globout)
+	{
+	  printf("\n\nError in expanding the weight images wildcard:\n%s\n", 
+		 up->wsurv_name);
+	  if (globout==GLOB_ABORTED)
+	    printf("----The directory could not be opened.");
+	  else if(globout==GLOB_NOMATCH)
+	    printf("----There were no matches\n\n");
+	  else if (globout==GLOB_NOSPACE)
+	    printf("----Not enough space to allocate the names.\n\n");
+	  exit(EXIT_FAILURE);
+	} 
+
+      /* Check to see if the number of images are the same: */
+      if(p->survglob.gl_pathc != p->wsurvglob.gl_pathc)
+	{
+	  printf("Error: The number of wildcard matches in `%s` (%lu) and"
+		 "`%s` (%lu) are not equal. TIFAA aborted.\n\n",
+		 up->surv_name, p->survglob.gl_pathc, up->wsurv_name, 
+		 p->wsurvglob.gl_pathc);
+	  exit(EXIT_FAILURE);
+	}
+
+      /* Incase you want to see the results:
+	 {
+	   size_t i;
+	   printf("gl_pathc: %lu\n", (size_t)p->wsurvglob.gl_pathc);
+	   for(i=0;i<(size_t)p->wsurvglob.gl_pathc;i++)
+	     printf("%lu: %s\n", i, p->wsurvglob.gl_pathv[i]);
+	 }    
+      */
+    }
 }
 
 
@@ -415,69 +457,75 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
   struct uiparams up;
 
   /* Set the default parameter values for a check in the end: */
-  up.cat_name   = DEFAULTCATNAME;     p->ra_col    = DEFAULTRACOL;       
-  p->dec_col    = DEFAULTDECCOL;      p->res       = DEFAULTRES;         
-  p->ps_size    = DEFAULTPSSIZE;      up.surv_name = DEFAULTSURVNAME;    
-  p->out_name   = "./PS/";            p->out_ext     = ".fits";          
-  p->chk_size   = 3;                  p->info_name   = "psinfo.txt";     
-  p->verb       = 0;                  up.delpsfolder = 0;                
-  p->numthrd    = 1;
+  up.cat_name    = DEFAULTPOINTER;     p->ra_col       = DEFAULTINDEX;
+  p->dec_col     = DEFAULTINDEX;       p->res          = DEFAULTPOSFLOAT;
+  p->ps_size     = DEFAULTPOSFLOAT;    up.surv_name    = DEFAULTPOINTER;
+  up.wsurv_name  = DEFAULTPOINTER;     p->verb         = 0;
+  up.delpsfolder = 0;                  p->weightmultip = 0;
+  p->out_name    = "./PS/";            p->out_ext      = ".fits";          
+  p->chk_size    = 3;                  p->info_name    = "psinfo.txt";
+  p->numthrd     = 1;                  
 
-  while( (c=getopt(argc, argv, "hegva:c:d:f:k:o:p:r:s:t:")) 
+  while( (c=getopt(argc, argv, "hegva:c:d:f:k:m:o:p:r:s:t:w:")) 
 	 != -1 )
     switch(c)
       {
       /* Info options: */
-      case 'h':                 /* Print help.  */
+      case 'h':                 /* Print help.                        */
 	printhelp(p);
 	exit(EXIT_SUCCESS);
 	break;
-      case 'v':                 /* Print version.  */
+      case 'v':                 /* Print version.                     */
 	printversioninfo();
 	exit(EXIT_SUCCESS);
 	break;
 
       /* No argument options: */
-      case 'e':	                /* Verbose mode. */
+      case 'e':	                /* Verbose mode.                      */
 	p->verb=1;
 	break;
-      case 'g':
+      case 'g':			/* Delete existing output folder?     */
 	up.delpsfolder=1;
 	break;
 
-
-      /* Options with arguments: */
-      case 'c':	                /* Input catalog name */
+      /* Mandatory options with arguments: */
+      case 'c':	                /* Input catalog name                 */
 	up.cat_name=optarg;
 	break;
-      case 'r':	                /* Column number of RA (from 0).*/
+      case 'r':	                /* Column number of RA (from 0).      */
 	checkiflzero(optarg, &tmp, c);	
 	p->ra_col=tmp;
 	break;
-      case 'd':	                /* Column number of DEC (from 0).*/
+      case 'd':	                /* Column number of DEC (from 0).     */
 	checkiflzero(optarg, &tmp, c);	
 	p->dec_col=tmp;
 	break;
-      case 'a':			/* Resolution of image. */
+      case 'a':			/* Resolution of image.               */
 	p->res=strtof(optarg, &tailptr);
 	break;
-      case 'p':			/* Postage stamp size in arcseconds. */
+      case 'p':			/* Postage stamp size in arcseconds.  */
 	p->ps_size=strtof(optarg, &tailptr);
 	break;
-      case 's':			/* Folder containing survey images. */
+      case 's':			/* Wild card of images to use.        */
 	up.surv_name=optarg;
 	break;
-      case 't':
+
+      /* Optional options with arguments: */
+      case 'w':			/* Wild card of weight images to use. */
+	p->weightmultip=1;
+	up.wsurv_name=optarg;
+	break;
+      case 't':			/* Number of threads to use.          */
 	checkiflzero(optarg, &tmp, c);
 	p->numthrd=tmp;
 	break;
-      case 'o':			/* Folder keeping cropped images. */
+      case 'o':			/* Folder keeping cropped images.     */
 	p->out_name=optarg;
 	break;
-      case 'f':			/* ending of output file name. */
+      case 'f':			/* Ending of output file name.        */
 	p->out_ext=optarg;
 	break;
-      case 'k':
+      case 'k':			/* Region to check for blank crop.    */
 	checkifelzero(optarg, &tmp, c);	
 	p->chk_size=tmp;
 	break;
@@ -511,4 +559,6 @@ freeparams(struct tifaaparams *p)
   free(p->imginfo);
   free(p->whichimg);
   globfree(&p->survglob);
+  if(p->weightmultip)
+    globfree(&p->wsurvglob);
 }

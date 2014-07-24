@@ -308,21 +308,24 @@ void *
 stitchcroponthread(void *inparam)
 {
   struct stitchcropthread *p=(struct stitchcropthread *)inparam;
+  struct tifaaparams *tp=p->tp;
 
+  int wwc_stat;
   struct wcsprm *wcs;
   pthread_mutex_t *wcsmtxp=p->wm;
-  fitsfile *write_fptr, *read_fptr;
-  float *cropped, *tmparray, nulval=-9999;
-  int stat[NWCSFIX], verb=p->tp->verb, group=0, anynul=0;
-  char fitsname[1000], **imgnames=p->tp->survglob.gl_pathv;
-  size_t racol=p->tp->ra_col, deccol=p->tp->dec_col, numimg;
-  size_t *t, *i, *whichimg=p->tp->whichimg, *log=p->tp->log;
+  char **whtnames=tp->wsurvglob.gl_pathv;
+  fitsfile *write_fptr, *read_fptr, *wread_fptr;
+  size_t racol=tp->ra_col, deccol=tp->dec_col, numimg;
+  int stat[NWCSFIX], verb=tp->verb, group=0, anynul=0;
+  char fitsname[1000], **imgnames=tp->survglob.gl_pathv;
+  size_t *t, *i, *whichimg=tp->whichimg, *log=tp->log, tmpsize;
   int wr_status, fr_status, wc_status, nwcs, ncoord=1, nelem=2;
-  char *outname=p->tp->out_name, *outext=p->tp->out_ext, *fullheader;
-  double world[2], *cat=p->tp->cat, phi, theta, imgcrd[2], pixcrd[2];
+  char *outname=tp->out_name, *outext=tp->out_ext, *fullheader;
+  float *cropped, *tmparray, nulval=-9999, *wtmp, *wf, *wff, *sf;
+  double world[2], *cat=tp->cat, phi, theta, imgcrd[2], pixcrd[2];
+  size_t zero_flag, remove_flag, cs1=tp->cs1, crop_side=p->crop_side;
+  long onaxes[2], nelements, naxis=2, inaxes[2], chk_size=tp->chk_size;
   long fpixel_c[2], lpixel_c[2], fpixel_i[2], lpixel_i[2], inc[2]={1,1};
-  size_t zero_flag, remove_flag, cs1=p->tp->cs1, crop_side=p->crop_side;
-  long onaxes[2], nelements, naxis=2, inaxes[2], chk_size=p->tp->chk_size;
 
   /* Set the width of the output */
   onaxes[0]=crop_side; onaxes[1]=crop_side;
@@ -352,7 +355,7 @@ stitchcroponthread(void *inparam)
       do
 	{
 	  /* Prepare wcsprm structure and read the image size.*/
-	  fr_status=0; wc_status=0;
+	  fr_status=0; wc_status=0; 
 	  prepare_fitswcs(imgnames[*i], &read_fptr, &fr_status, &wc_status, 
 			  &nwcs, &wcs, wcsmtxp, &fullheader);
 	  fits_read_key(read_fptr, TLONG, "NAXIS1", &inaxes[0], 
@@ -369,17 +372,39 @@ stitchcroponthread(void *inparam)
 	  find_desired_pixel_range(pixcrd, inaxes[0], inaxes[1], crop_side,
 				   fpixel_i, lpixel_i, fpixel_c, lpixel_c);
 
-	  /* Make the array to keep the section pixels. The +1
-	     on each axis is explained in the explanations of 
-	     find_desired_pixel_range, in short it  */
-	  tmparray=calloc((lpixel_i[0]-fpixel_i[0]+1)
-			  *(lpixel_i[1]-fpixel_i[1]+1), sizeof *tmparray);
-	  assert(tmparray!=NULL);
+	  /* In case you want to multiply by the weight image: */
+	  if(tp->weightmultip)
+	    {			/* See the comments of what is in `else`. */
+	      wwc_stat=0;
+	      fits_open_file(&wread_fptr, whtnames[*i], READONLY, &wwc_stat);
+	      tmpsize=(lpixel_i[0]-fpixel_i[0]+1)*(lpixel_i[1]-fpixel_i[1]+1);
+	      assert( (tmparray=malloc(tmpsize*sizeof *tmparray))!=NULL );
+	      assert( (wtmp=malloc(tmpsize*sizeof *wtmp))!=NULL );
+	      fits_read_subset_flt(read_fptr, group, naxis, inaxes, fpixel_i, 
+				   lpixel_i, inc, nulval, tmparray, &anynul, 
+				   &fr_status);
+	      fits_read_subset_flt(wread_fptr, group, naxis, inaxes,fpixel_i, 
+				   lpixel_i, inc, nulval, wtmp, &anynul, 
+				   &wwc_stat);
+	      sf=tmparray; wff=(wf=wtmp)+tmpsize; 
+	      do *sf++ *= *wf; while(++wf<wff);
+	      fits_close_file(wread_fptr, &wwc_stat);
+	      free(wtmp);
+	    }
+	  else
+	    {
+	      /* Make the array to keep the section pixels. The +1
+		 on each axis is explained in the explanations of 
+		 find_desired_pixel_range().  */
+	      tmparray=malloc((lpixel_i[0]-fpixel_i[0]+1)
+			      *(lpixel_i[1]-fpixel_i[1]+1)* sizeof *tmparray);
+	      assert(tmparray!=NULL);
 
-	  /* Read the pixels in the desired subset: */
-	  fits_read_subset_flt(read_fptr, group, naxis, inaxes, fpixel_i, 
-			       lpixel_i, inc, nulval, tmparray, &anynul, 
-			       &fr_status);
+	      /* Read the pixels in the desired subset: */
+	      fits_read_subset_flt(read_fptr, group, naxis, inaxes, fpixel_i, 
+				   lpixel_i, inc, nulval, tmparray, &anynul, 
+				   &fr_status);
+	    }
 
 	  /* Write that section */
 	  fits_write_subset_flt(write_fptr, group, naxis, onaxes, fpixel_c,
@@ -389,7 +414,7 @@ stitchcroponthread(void *inparam)
 	     this is the first stitch. */
 	  if(numimg==0)
 	    addheaderinfo(write_fptr, &wr_status, wcs, fpixel_i, fpixel_c,
-			  world, p->tp->ps_size, p->tp->res);
+			  world, tp->ps_size, tp->res);
 
 	  /* Free the spaces: */
 	  free(tmparray);

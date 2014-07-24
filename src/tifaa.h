@@ -39,9 +39,12 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 
 struct tifaaparams
 {
-  /* Paramters given by user: */
+  /* General parameters: */
   size_t    numthrd;  /* Number of threads to use.                      */
   int          verb;  /* ==1: report steps. ==0 don't.                  */
+  int  weightmultip;  /* ==1: Multiply by weight. ==0, don't.           */
+
+  /* Details: */
   double       *cat;  /* Data of catalog.                               */
   size_t        cs0;  /* Number of rows in the catalog.                 */
   size_t        cs1;  /* Number of columns in the catalog.              */
@@ -50,6 +53,7 @@ struct tifaaparams
   double        res;  /* Resolution in arcseconds                       */
   double    ps_size;  /* Postage stamp size (in arcseconds).            */
   glob_t   survglob;  /* glob structure of input images.                */
+  glob_t  wsurvglob;  /* glob structure of weight images.               */
   char    *out_name;  /* Folder keeping the cropped images              */
   char     *out_ext;  /* Ending of output file name                     */
   long     chk_size;  /* width of a box to check for zeros              */
