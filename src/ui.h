@@ -2,7 +2,7 @@
 tifaa - Thumbnail images from astronomical archives
 A simple set of functions to crop thumbnails from astronomical archives.
 
-Copyright (C) 2013 Mohammad Akhlaghi
+Copyright (C) 2013-2014 Mohammad Akhlaghi
 Tohoku University Astronomical Institute, Sendai, Japan.
 http://astr.tohoku.ac.jp/~akhlaghi/
 

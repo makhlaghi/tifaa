@@ -2,7 +2,7 @@
 tifaa - Thumbnail images from astronomical archives
 A simple set of functions to crop thumbnails from astronomical archives.
 
-Copyright (C) 2013 Mohammad Akhlaghi
+Copyright (C) 2013-2014 Mohammad Akhlaghi
 Tohoku University Astronomical Institute, Sendai, Japan.
 http://astr.tohoku.ac.jp/~akhlaghi/
 
@@ -74,7 +74,7 @@ printhelp(struct tifaaparams *p)
 {
   printversioninfo();
   printf("\nOptions are classified into three groups:\n"
-	 "  1. Won't run NoiseChisel.\n"
+	 "  1. Won't run TIFAA.\n"
 	 "  2. Not needing arguments (on/off switches). \n"
 	 "  3. Needing arguments.\n\n\n");
 
@@ -107,15 +107,18 @@ printhelp(struct tifaaparams *p)
 	 "-s STRING:\n\tWild card based survey image names.\n"
 	 "\tFor example if your survey images are in the directory\n"
 	 "\t`/SURVEY/` and all your survey images end in `sci.fits`\n"
-	 "\tthen the value for this option would be: `/SURVEY/*sci.fits`."
-	 "\n\n");
+	 "\tthen the value for this option would be: `/SURVEY/\\*sci.fits`.\n"
+	 "\tNote that there should be a backslash (`\\`) before the `*` so the\n"
+	 "\tshell doesn't expand it before TIFAA sees it.\n\n");
 
 
   printf("\n########### Optional options with arguments:\n"
 	 "-w STRING:\n\tWild card based survey weight image names.\n"
 	 "\tSimilar to `-s` but for weight images. If this option is called\n"
 	 "\tthen TIFAA will multiply the cropped regions from the\n"
-	 "\timages in this wildcard to those provided in `-s`.\n\n"
+	 "\timages in this wildcard to those provided in `-s`. If you want\n"
+	 "\ta crop of the weight images only, give their wild card\n"
+	 "\trepresentation to `-s` alone.\n\n"
 
 	 "-t INTEGER:\n\tDEFAULT: %lu\n"
 	 "\tThe number of threads you want TIFAA to use. Unfortunately,\n"
