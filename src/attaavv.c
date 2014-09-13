@@ -88,8 +88,8 @@ CountCols(char *str, int *s1, double **table,
    replacement has taken place because the specified element in the
    data was not a number */
 void 
-replacenan(struct ArrayInfo *intable, int col, char *strdata, 
-        long int *buff_num_replacements)
+replacenan(struct ArrayInfo *intable, int col, 
+	   long int *buff_num_replacements)
 {
   int *temp_i_pt;
  
@@ -108,16 +108,7 @@ replacenan(struct ArrayInfo *intable, int col, char *strdata,
 
   /* Do the replacement: */
   intable->d[intable->s0*intable->s1+col]=(double) CHAR_REPLACEMENT;
-#if 0
-  /* Report it. If CHAR_REPLACEMENT is zero, abort the program: */
-  printf("### Not a number:\n");
-  printf("###        \"%s\" in (%d, %d)\n", strdata, intable->s0, col);
-  if (CHAR_REPLACEMENT==0) exit(EXIT_FAILURE);
-  printf("###        replaced with"); 
-  printf(" %f.\n", (double) CHAR_REPLACEMENT);
-  printf("###        (CHAR_REPLACEMENT macro)\n\n");
-#endif
-  strdata=NULL;
+
   /* Save the position of the replaced element and 
      increment the number of replacements */
   intable->r[2*intable->nr]=intable->s0;
@@ -165,7 +156,7 @@ AddRow(struct ArrayInfo *intable, long int *buff_num_rows,
   /* Read the first element of the row: */
   intable->d[z_index]=strtod(strdata, ExtraString);
   if (strlen(*ExtraString)>0)
-    replacenan(intable, 0, strdata, buff_num_replacements);
+    replacenan(intable, 0, buff_num_replacements);
 
   /* Continue with the rest: */
   while (1)
@@ -177,7 +168,7 @@ AddRow(struct ArrayInfo *intable, long int *buff_num_rows,
 	 inform the user and replace it with CHAR_REPLACEMENT*/
       intable->d[z_index+num_cols++]=strtod(strdata, ExtraString);
       if (strlen(*ExtraString)>0)
-	replacenan(intable, num_cols-1, strdata, buff_num_replacements);
+	replacenan(intable, num_cols-1, buff_num_replacements);
      
       /* Incase the number of columns has exceeded the desired value
 	 abort the program and inform the user. */

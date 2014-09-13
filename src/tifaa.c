@@ -24,6 +24,7 @@ along with tifaa.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <unistd.h>
 #include <pthread.h>
 
 #include "tifaa.h"
@@ -197,28 +198,28 @@ report_prepare_end(int verb, size_t *log, size_t targetindex, int numimg,
   if (zero_flag==1)
     {
       if(verb)
-	printf("%5lu:   Central region (at least) is zero!\n", targetindex);
+	printf("%5lu:   Central region (at least) is zero!\n", targetindex+1);
       *remove_flag=1;
       log[targetindex*LOG_COLS+2]=1;
     }
   else if (numimg==0)
     {
       if(verb)
-	printf("%5lu:   Not in field!\n", targetindex);
+	printf("%5lu:   Not in field!\n", targetindex+1);
       *remove_flag=1;
       log[targetindex*LOG_COLS+2]=2;
     }
   else if (numimg==1)
     {
       if(verb)
-	printf("%5lu:   cropped.\n", targetindex);
+	printf("%5lu:   cropped.\n", targetindex+1);
       log[targetindex*LOG_COLS+2]=0;
     }
   else if (numimg>1)
     {
       if(verb)
 	printf("%5lu:   stiched and cropped (%d images).\n",  
-	       targetindex, numimg);
+	       targetindex+1, numimg);
       log[targetindex*LOG_COLS+2]=0;
     }
 }
@@ -335,6 +336,9 @@ stitchcroponthread(void *inparam)
   t=&p->targetthrds[p->id*p->thrdcols];
   do
     {
+      /* In case this object doesn't exist in the image range, ignore it. */
+      if(whichimg[*t*WI_COLS]==NONINDEX) continue;
+
       /* Set the remove and zero flags to zero: */
       zero_flag=0; remove_flag=0;
 
@@ -344,7 +348,7 @@ stitchcroponthread(void *inparam)
 
       /* Create the fits image for the cropped array here: */
       wr_status=0;
-      sprintf(fitsname, "%s%lu%s", outname, *t, outext);
+      sprintf(fitsname, "%s%lu%s", outname, *t+1, outext);
       assert( (cropped=calloc(nelements, sizeof *cropped))!=NULL );
       fits_create_file(&write_fptr, fitsname, &wr_status);
       fits_create_img(write_fptr, FLOAT_IMG, naxis, onaxes, &wr_status);
@@ -354,7 +358,7 @@ stitchcroponthread(void *inparam)
       numimg=0;      
       i=&whichimg[*t*WI_COLS];
       do
-	{
+	{ 
 	  /* Prepare wcsprm structure and read the image size.*/
 	  fr_status=0; wc_status=0; 
 	  prepare_fitswcs(imgnames[*i], &read_fptr, &fr_status, &wc_status, 
@@ -363,7 +367,6 @@ stitchcroponthread(void *inparam)
 			NULL, &fr_status);
 	  fits_read_key(read_fptr, TLONG, "NAXIS2", &inaxes[1], 
 			NULL, &fr_status);
-
 	  /* Find the position of the object's RA and Dec: */
 	  wc_status = wcss2p(wcs, ncoord, nelem, world, &phi, 
 			     &theta, imgcrd, pixcrd, stat); 
@@ -411,6 +414,7 @@ stitchcroponthread(void *inparam)
 	  fits_write_subset_flt(write_fptr, group, naxis, onaxes, fpixel_c,
 				lpixel_c, tmparray, &wr_status);
 
+
 	  /* Add the WCS header information to the cropped image if
 	     this is the first stitch. */
 	  if(numimg==0)
@@ -427,7 +431,7 @@ stitchcroponthread(void *inparam)
       while(*(++i)!=NONINDEX);
  
       /* Save the necessary information in the process log */
-      log[*t*LOG_COLS  ] = *t;
+      log[*t*LOG_COLS  ] = *t+1;
       log[*t*LOG_COLS+1] = numimg;
 
       /* Check to see if the center of the image is empty or not. */
@@ -440,6 +444,10 @@ stitchcroponthread(void *inparam)
  
       /* Report the results on stdout and in final_report: */
       report_prepare_end(verb, log, *t, numimg, zero_flag, &remove_flag);
+
+      /* If the image should be removed, do so: */
+      if(remove_flag)
+	assert(unlink(fitsname)==0);
 
       free(cropped);
     }

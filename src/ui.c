@@ -125,7 +125,7 @@ printhelp(struct tifaaparams *p)
 	 "\tone step in wcslib is not thread-safe, therefore until a\n"
 	 "\ta future update where this issue is fixed in wcslib, TIFAA\n"
 	 "\twill operate faster on one thread! In case you want to see\n"
-	 "\thow many threads your OS has available type `$ echo $NCORES`\n"
+	 "\thow many threads your OS has available type `$ nproc`\n"
 	 "\tin your terminal prompt.\n\n"
 
 	 "-o STRING:\n\tDEFAULT: `%s`\n"
@@ -319,7 +319,7 @@ readinputcatalogandimgnames(struct tifaaparams *p, struct uiparams *up)
       exit(EXIT_FAILURE);
     } 
 
-  /* Incase you want to see the results:
+  /* Incase you want to see the results:  
   {
     size_t i;
     printf("gl_pathc: %lu\n", (size_t)p->survglob.gl_pathc);
@@ -496,11 +496,11 @@ setparams(int argc, char *argv[], struct tifaaparams *p)
 	up.cat_name=optarg;
 	break;
       case 'r':	                /* Column number of RA (from 0).      */
-	checkiflzero(optarg, &tmp, c);	
+	checkifelzero(optarg, &tmp, c);	
 	p->ra_col=tmp;
 	break;
       case 'd':	                /* Column number of DEC (from 0).     */
-	checkiflzero(optarg, &tmp, c);	
+	checkifelzero(optarg, &tmp, c);	
 	p->dec_col=tmp;
 	break;
       case 'a':			/* Resolution of image.               */

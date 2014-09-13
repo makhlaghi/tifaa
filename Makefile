@@ -7,7 +7,7 @@ vpath %.c $(src)
 
 CC      = gcc
 CFLAGS  = -Wall -O3 -W -I$(src)
-#CFLAGS  = -g -Wall -O0 -W -I$(src)  #For debugging and valgrind.
+#CFLAGS  = -g3 -Wall -W -I$(src)  #For debugging and valgrind.
 LDLIBS  = -lcfitsio -lwcs -pthread -lm
 
 tifaa: $(objects) 
