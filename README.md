@@ -1,6 +1,14 @@
 tifaa
 =======
 
+tifaa is discontinued. Its core algorithms are now implemented in 
+ImageCrop and the other tools in GNU Astronomy Utilities:
+
+https://www.gnu.org/software/gnuastro/
+
+Please visit there for a much better user experience and more accurate
+programs.
+
 tifaa - Thumbnail images from astronomical archives.
 
 About tifaa:
